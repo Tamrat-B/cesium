@@ -104,6 +104,19 @@ function ArcGISTiledElevationTerrainProvider(options) {
         spatialReference.wkid
       );
       var extent = metadata.extent;
+      if (!defined(extent)) {
+        extent = metadata.fullExtent;
+        if (!defined(extent)) {
+          extent = metadata.initialExtent;
+          if (!defined(extent)) {
+            return when.reject(
+              new RuntimeError(
+                "extent, fullExtent or InitialExtent is required"
+              )
+            );
+          }
+        }
+      }
       var tilingSchemeOptions = {
         ellipsoid: ellipsoid,
       };
@@ -168,16 +181,28 @@ function ArcGISTiledElevationTerrainProvider(options) {
         that._tilingScheme.getNumberOfXTilesAtLevel(0)
       );
 
-      if (metadata.bandCount > 1) {
+      var bandCount = metadata.bandCount;
+      if (!defined(bandCount)) {
+        bandCount = tileInfo.bandCount;
+      }
+      if (bandCount > 1) {
         console.log(
           "ArcGISTiledElevationTerrainProvider: Terrain data has more than 1 band. Using the first one."
         );
       }
 
+      var minValue = undefined;
+      var maxValue = undefined;
+      if (defined(metadata.minValues)) {
+        minValue = metadata.minValues[0];
+      }
+      if (defined(metadata.minValues)) {
+        maxValue = metadata.maxValues[0];
+      }
       that._terrainDataStructure = {
         elementMultiplier: 1.0,
-        lowestEncodedHeight: metadata.minValues[0],
-        highestEncodedHeight: metadata.maxValues[0],
+        lowestEncodedHeight: minValue,
+        highestEncodedHeight: maxValue,
       };
 
       that._ready = true;
